@@ -37,34 +37,24 @@
 
         <activity android:name=".kotlin.MainActivity" />
         <activity android:name=".java.MainActivity" />
-        <service
-            android:name=".kotlin.MyJobService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE" />
-            </intent-filter>
-        </service>
 
-        <service android:name=".kotlin.MyFirebaseMessagingService">
+        <service
+            android:name=".kotlin.MyFirebaseMessagingService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
         <!-- [START firebase_service] -->
-        <service android:name=".java.MyFirebaseMessagingService">
+        <service
+            android:name=".java.MyFirebaseMessagingService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
         <!-- [END firebase_service] -->
-        <service
-            android:name=".java.MyJobService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE" />
-            </intent-filter>
-        </service>
     </application>
 
 </manifest>

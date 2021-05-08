@@ -1,21 +1,20 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 
 check.dependsOn 'assembleMainFlavorDebugAndroidTest'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 30
     flavorDimensions "irrelevant"
 
     defaultConfig {
         applicationId "com.google.firebase.quickstart.deeplinks"
         minSdkVersion 16
-        targetSdkVersion 28
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -36,27 +35,35 @@ android {
             resValue "string", "dynamic_links_uri_prefix", "https://YOUR_APP.page.link"
         }
     }
-}
 
-configurations.all {
-    resolutionStrategy.force 'com.android.support:support-annotations:28.0.0'
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
 dependencies {
     implementation project(":internal:lintchecks")
-    implementation project(":internal:chooser")
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.10"
+    implementation project(":internal:chooserx")
 
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:support-v4:28.0.0'
-    implementation 'com.android.support:design:28.0.0'
+    implementation 'com.google.android.material:material:1.3.0'
 
-    implementation 'com.google.firebase:firebase-core:16.0.6'
-    implementation 'com.google.firebase:firebase-invites:16.0.6'
+    // Import the Firebase BoM (see: https://firebase.google.com/docs/android/learn-more#bom)
+    implementation platform('com.google.firebase:firebase-bom:27.1.0')
 
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    androidTestImplementation 'com.android.support.test:rules:1.0.2'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    // Firebase Dynamic Links (Java)
+    implementation 'com.google.firebase:firebase-dynamic-links'
+
+    // Firebase Dynamic Links (Kotlin)
+    implementation 'com.google.firebase:firebase-dynamic-links-ktx'
+
+    // For an optimal experience using Dynamic Links, add the Firebase SDK
+    // for Google Analytics. This is recommended, but not required.
+    implementation 'com.google.firebase:firebase-analytics'
+
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    androidTestImplementation 'androidx.test:rules:1.3.0'
+    androidTestImplementation 'androidx.test:runner:1.3.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
 }
 
 apply plugin: 'com.google.gms.google-services'

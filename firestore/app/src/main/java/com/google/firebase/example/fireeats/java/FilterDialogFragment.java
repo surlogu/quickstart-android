@@ -2,25 +2,24 @@ package com.google.firebase.example.fireeats.java;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Spinner;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
+
 import com.google.firebase.example.fireeats.R;
+import com.google.firebase.example.fireeats.databinding.DialogFiltersBinding;
 import com.google.firebase.example.fireeats.java.model.Restaurant;
 import com.google.firebase.firestore.Query;
-
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 /**
  * Dialog Fragment containing filter form.
  */
-public class FilterDialogFragment extends DialogFragment {
+public class FilterDialogFragment extends DialogFragment implements View.OnClickListener {
 
     public static final String TAG = "FilterDialog";
 
@@ -30,39 +29,34 @@ public class FilterDialogFragment extends DialogFragment {
 
     }
 
-    private View mRootView;
-
-    @BindView(R.id.spinnerCategory)
-    Spinner mCategorySpinner;
-
-    @BindView(R.id.spinnerCity)
-    Spinner mCitySpinner;
-
-    @BindView(R.id.spinnerSort)
-    Spinner mSortSpinner;
-
-    @BindView(R.id.spinnerPrice)
-    Spinner mPriceSpinner;
-
+    private DialogFiltersBinding mBinding;
     private FilterListener mFilterListener;
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater,
+    public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        mRootView = inflater.inflate(R.layout.dialog_filters, container, false);
-        ButterKnife.bind(this, mRootView);
+        mBinding = DialogFiltersBinding.inflate(inflater, container, false);
+        
+        mBinding.buttonSearch.setOnClickListener(this);
+        mBinding.buttonCancel.setOnClickListener(this);
 
-        return mRootView;
+        return mBinding.getRoot();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mBinding = null;
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
 
-        if (context instanceof FilterListener) {
-            mFilterListener = (FilterListener) context;
+        if (getParentFragment() instanceof FilterListener) {
+            mFilterListener = (FilterListener) getParentFragment();
         }
     }
 
@@ -74,7 +68,6 @@ public class FilterDialogFragment extends DialogFragment {
                 ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
-    @OnClick(R.id.buttonSearch)
     public void onSearchClicked() {
         if (mFilterListener != null) {
             mFilterListener.onFilter(getFilters());
@@ -83,14 +76,13 @@ public class FilterDialogFragment extends DialogFragment {
         dismiss();
     }
 
-    @OnClick(R.id.buttonCancel)
     public void onCancelClicked() {
         dismiss();
     }
 
     @Nullable
     private String getSelectedCategory() {
-        String selected = (String) mCategorySpinner.getSelectedItem();
+        String selected = (String) mBinding.spinnerCategory.getSelectedItem();
         if (getString(R.string.value_any_category).equals(selected)) {
             return null;
         } else {
@@ -100,7 +92,7 @@ public class FilterDialogFragment extends DialogFragment {
 
     @Nullable
     private String getSelectedCity() {
-        String selected = (String) mCitySpinner.getSelectedItem();
+        String selected = (String) mBinding.spinnerCity.getSelectedItem();
         if (getString(R.string.value_any_city).equals(selected)) {
             return null;
         } else {
@@ -109,7 +101,7 @@ public class FilterDialogFragment extends DialogFragment {
     }
 
     private int getSelectedPrice() {
-        String selected = (String) mPriceSpinner.getSelectedItem();
+        String selected = (String) mBinding.spinnerPrice.getSelectedItem();
         if (selected.equals(getString(R.string.price_1))) {
             return 1;
         } else if (selected.equals(getString(R.string.price_2))) {
@@ -123,7 +115,7 @@ public class FilterDialogFragment extends DialogFragment {
 
     @Nullable
     private String getSelectedSortBy() {
-        String selected = (String) mSortSpinner.getSelectedItem();
+        String selected = (String) mBinding.spinnerSort.getSelectedItem();
         if (getString(R.string.sort_by_rating).equals(selected)) {
             return Restaurant.FIELD_AVG_RATING;
         } if (getString(R.string.sort_by_price).equals(selected)) {
@@ -137,7 +129,7 @@ public class FilterDialogFragment extends DialogFragment {
 
     @Nullable
     private Query.Direction getSortDirection() {
-        String selected = (String) mSortSpinner.getSelectedItem();
+        String selected = (String) mBinding.spinnerSort.getSelectedItem();
         if (getString(R.string.sort_by_rating).equals(selected)) {
             return Query.Direction.DESCENDING;
         } if (getString(R.string.sort_by_price).equals(selected)) {
@@ -150,18 +142,18 @@ public class FilterDialogFragment extends DialogFragment {
     }
 
     public void resetFilters() {
-        if (mRootView != null) {
-            mCategorySpinner.setSelection(0);
-            mCitySpinner.setSelection(0);
-            mPriceSpinner.setSelection(0);
-            mSortSpinner.setSelection(0);
+        if (mBinding != null) {
+            mBinding.spinnerCategory.setSelection(0);
+            mBinding.spinnerCity.setSelection(0);
+            mBinding.spinnerPrice.setSelection(0);
+            mBinding.spinnerSort.setSelection(0);
         }
     }
 
     public Filters getFilters() {
         Filters filters = new Filters();
 
-        if (mRootView != null) {
+        if (mBinding != null) {
             filters.setCategory(getSelectedCategory());
             filters.setCity(getSelectedCity());
             filters.setPrice(getSelectedPrice());
@@ -170,5 +162,17 @@ public class FilterDialogFragment extends DialogFragment {
         }
 
         return filters;
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.buttonSearch:
+                onSearchClicked();
+                break;
+            case R.id.buttonCancel:
+                onCancelClicked();
+                break;
+        }
     }
 }

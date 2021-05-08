@@ -17,14 +17,12 @@
 package com.google.samples.quickstart.crash.java;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.CheckBox;
 
-import com.crashlytics.android.Crashlytics;
-import com.google.samples.quickstart.crash.R;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
+import com.google.samples.quickstart.crash.databinding.ActivityMainBinding;
 
 /**
  * This Activity shows the different ways of reporting application crashes.
@@ -40,44 +38,49 @@ import com.google.samples.quickstart.crash.R;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    private FirebaseCrashlytics mCrashlytics;
+    private CustomKeySamples samples;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        this.samples = new CustomKeySamples(this.getApplicationContext());
+        samples.setSampleCustomKeys();
+        samples.updateAndTrackNetworkState();
+
+        mCrashlytics = FirebaseCrashlytics.getInstance();
 
         // Log the onCreate event, this will also be printed in logcat
-        Crashlytics.log(Log.VERBOSE, TAG, "onCreate");
+        mCrashlytics.log("onCreate");
 
         // Add some custom values and identifiers to be included in crash reports
-        Crashlytics.setInt("MeaningOfLife", 42);
-        Crashlytics.setString("LastUIAction", "Test value");
-        Crashlytics.setUserIdentifier("123456789");
+        mCrashlytics.setCustomKey("MeaningOfLife", 42);
+        mCrashlytics.setCustomKey("LastUIAction", "Test value");
+        mCrashlytics.setUserId("123456789");
 
         // Report a non-fatal exception, for demonstration purposes
-        Crashlytics.logException(new Exception("Non-fatal exception: something went wrong!"));
-
-        // Checkbox to indicate when to catch the thrown exception.
-        final CheckBox catchCrashCheckBox = findViewById(R.id.catchCrashCheckBox);
+        mCrashlytics.recordException(new Exception("Non-fatal exception: something went wrong!"));
 
         // Button that causes NullPointerException to be thrown.
-        Button crashButton = findViewById(R.id.crashButton);
-        crashButton.setOnClickListener(new View.OnClickListener() {
+        binding.crashButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Log that crash button was clicked.
-                Crashlytics.log(Log.INFO, TAG, "Crash button clicked.");
+                mCrashlytics.log("Crash button clicked.");
 
-                // If catchCrashCheckBox is checked catch the exception and report is using
+                // If catchCrashCheckBox is checked catch the exception and report it using
                 // logException(), Otherwise throw the exception and let Crashlytics automatically
                 // report the crash.
-                if (catchCrashCheckBox.isChecked()) {
+                if (binding.catchCrashCheckBox.isChecked()) {
                     try {
                         throw new NullPointerException();
                     } catch (NullPointerException ex) {
                         // [START crashlytics_log_and_report]
-                        Crashlytics.log(Log.ERROR, TAG, "NPE caught!");
-                        Crashlytics.logException(ex);
+                        mCrashlytics.log("NPE caught!");
+                        mCrashlytics.recordException(ex);
                         // [END crashlytics_log_and_report]
                     }
                 } else {
@@ -88,7 +91,13 @@ public class MainActivity extends AppCompatActivity {
 
         // Log that the Activity was created.
         // [START crashlytics_log_event]
-        Crashlytics.log("Activity created");
+        mCrashlytics.log("Activity created");
         // [END crashlytics_log_event]
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        samples.stopTrackingNetworkState();
     }
 }

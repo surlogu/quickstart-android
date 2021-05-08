@@ -1,38 +1,42 @@
 package com.google.samples.quickstart.config.kotlin
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
-import com.google.samples.quickstart.config.BuildConfig
+import com.google.firebase.remoteconfig.ktx.get
+import com.google.firebase.remoteconfig.ktx.remoteConfig
+import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
 import com.google.samples.quickstart.config.R
-import kotlinx.android.synthetic.main.activity_main.fetchButton
-import kotlinx.android.synthetic.main.activity_main.welcomeTextView
+import com.google.samples.quickstart.config.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var remoteConfig: FirebaseRemoteConfig
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        fetchButton.setOnClickListener { fetchWelcome() }
+        binding.fetchButton.setOnClickListener { fetchWelcome() }
 
         // Get Remote Config instance.
         // [START get_remote_config_instance]
-        remoteConfig = FirebaseRemoteConfig.getInstance()
+        remoteConfig = Firebase.remoteConfig
         // [END get_remote_config_instance]
 
         // Create a Remote Config Setting to enable developer mode, which you can use to increase
-        // the number of fetches available per hour during development. See Best Practices in the
-        // README for more information.
+        // the number of fetches available per hour during development. Also use Remote Config
+        // Setting to set the minimum fetch interval.
         // [START enable_dev_mode]
-        val configSettings = FirebaseRemoteConfigSettings.Builder()
-                .setDeveloperModeEnabled(BuildConfig.DEBUG)
-                .build()
-        remoteConfig.setConfigSettings(configSettings)
+        val configSettings = remoteConfigSettings {
+            minimumFetchIntervalInSeconds = 3600
+        }
+        remoteConfig.setConfigSettingsAsync(configSettings)
         // [END enable_dev_mode]
 
         // Set default Remote Config parameter values. An app uses the in-app default values, and
@@ -40,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         // want to change in the Firebase console. See Best Practices in the README for more
         // information.
         // [START set_default_values]
-        remoteConfig.setDefaults(R.xml.remote_config_defaults)
+        remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         // [END set_default_values]
 
         fetchWelcome()
@@ -50,34 +54,18 @@ class MainActivity : AppCompatActivity() {
      * Fetch a welcome message from the Remote Config service, and then activate it.
      */
     private fun fetchWelcome() {
-        welcomeTextView.text = remoteConfig.getString(LOADING_PHRASE_CONFIG_KEY)
-
-        val isUsingDeveloperMode = remoteConfig.info.configSettings.isDeveloperModeEnabled
-
-        // If your app is using developer mode, cacheExpiration is set to 0, so each fetch will
-        // retrieve values from the service.
-        val cacheExpiration: Long = if (isUsingDeveloperMode) {
-            0
-        } else {
-            3600 // 1 hour in seconds.
-        }
+        binding.welcomeTextView.text = remoteConfig[LOADING_PHRASE_CONFIG_KEY].asString()
 
         // [START fetch_config_with_callback]
-        // cacheExpirationSeconds is set to cacheExpiration here, indicating the next fetch request
-        // will use fetch data from the Remote Config service, rather than cached parameter values,
-        // if cached parameter values are more than cacheExpiration seconds old.
-        // See Best Practices in the README for more information.
-        remoteConfig.fetch(cacheExpiration)
+        remoteConfig.fetchAndActivate()
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        Toast.makeText(this, "Fetch Succeeded",
+                        val updated = task.result
+                        Log.d(TAG, "Config params updated: $updated")
+                        Toast.makeText(this, "Fetch and activate succeeded",
                                 Toast.LENGTH_SHORT).show()
-
-                        // After config data is successfully fetched, it must be activated before newly fetched
-                        // values are returned.
-                        remoteConfig.activateFetched()
                     } else {
-                        Toast.makeText(this, "Fetch Failed",
+                        Toast.makeText(this, "Fetch failed",
                                 Toast.LENGTH_SHORT).show()
                     }
                     displayWelcomeMessage()
@@ -92,10 +80,10 @@ class MainActivity : AppCompatActivity() {
     // [START display_welcome_message]
     private fun displayWelcomeMessage() {
         // [START get_config_values]
-        val welcomeMessage = remoteConfig.getString(WELCOME_MESSAGE_KEY)
+        val welcomeMessage = remoteConfig[WELCOME_MESSAGE_KEY].asString()
         // [END get_config_values]
-        welcomeTextView.isAllCaps = remoteConfig.getBoolean(WELCOME_MESSAGE_CAPS_KEY)
-        welcomeTextView.text = welcomeMessage
+        binding.welcomeTextView.isAllCaps = remoteConfig[WELCOME_MESSAGE_CAPS_KEY].asBoolean()
+        binding.welcomeTextView.text = welcomeMessage
     }
 
     companion object {
